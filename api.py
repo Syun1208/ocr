@@ -44,15 +44,17 @@ os.makedirs(output_dir, exist_ok=True)
 
 
 # load models
-refine_net = load_refinenet_model(cuda=True)
-craft_net = load_craftnet_model(cuda=True)
-args = parse_args()
-decoder_mapping = {'bestpath': DecoderType.BestPath,
-                    'beamsearch': DecoderType.BeamSearch,
-                    'wordbeamsearch': DecoderType.WordBeamSearch}
-decoder_type = decoder_mapping['wordbeamsearch']
-model = Model(char_list_from_file(), decoder_type, must_restore=True, dump=args.dump)
+def load_models():
+    refine_net = load_refinenet_model(cuda=True)
+    craft_net = load_craftnet_model(cuda=True)
+    args = parse_args()
+    decoder_mapping = {'bestpath': DecoderType.BestPath,
+                        'beamsearch': DecoderType.BeamSearch,
+                        'wordbeamsearch': DecoderType.WordBeamSearch}
+    decoder_type = decoder_mapping['wordbeamsearch']
+    model = Model(char_list_from_file(), decoder_type, must_restore=True, dump=args.dump)
 
+    return craft_net, refine_net, model
 
 class UserRequest(BaseModel):
     image_url: str
@@ -69,6 +71,8 @@ def recognizer(image):
     results = {}
     list_text = []
     list_score = []
+
+    craft_net, refine_net, model = load_models()
 
     prediction_result = get_prediction(
         image=image,
@@ -118,6 +122,5 @@ async def ocr(request: UserRequest):
     
 
 
-
 if __name__ == "__main__":
-    uvicorn.run("api:app", host='0.0.0.0', port=8080, workers=Pool()._processes)
+    uvicorn.run("api:app", host='0.0.0.0', port=8080, reload=True, workers=Pool()._processes)
