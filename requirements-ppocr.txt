@@ -1,0 +1,14 @@
+fastapi[all]
+uvicorn[standard]
+# scikit-image
+# imgaug
+# lmdb
+# pyclipper
+requests
+# urllib3==1.26.6
+# visualdl
+# paddlepaddle-gpu 
+# PyYAML==5.4.1
+# paddleslim==2.2.2
+# split-folders
+# lanms-nova
