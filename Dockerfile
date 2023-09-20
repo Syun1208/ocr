@@ -1,22 +1,18 @@
-FROM python:3.9.6-slim
+FROM python:3.8.2
+
+ENV PYTHONUNBUFFERED True
 
 WORKDIR /api
-
 
 COPY SimpleHTR/ /api
 COPY api.py /api/
 COPY requirements.txt /api/
-COPY requirements-ppocr.txt /api/
 
 RUN apt-get update -y \
     && apt-get install build-essential -y \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip install flit \
-    && FLIT_ROOT_INSTALL=1 flit install --deps production \
-    && rm -rf $(pip cache dir)
-
-RUN pip install --upgrade pip \
-    pip install -r requirements.txt \
-    pip install -r requirements-ppocr.txt
+    && apt-get update \
+    && apt-get install ffmpeg libsm6 libxext6  -y \
+    && pip install --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
 CMD python api.py
