@@ -1,0 +1,10 @@
+input/
+output/
+__pycache__/
+PaddleOCR/
+mmocr/
+requirements-mmocr.sh
+requirements-ppocr.txt
+test.py
+.git
+.gitignore

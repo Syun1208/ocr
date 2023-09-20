@@ -23,6 +23,8 @@ import numpy as np
 import sys
 from pathlib import Path
 import logging
+import tensorflow as tf
+from tensorflow.python.framework import ops
 
 FILE = Path(__file__).resolve()
 # Read folder containing file path
@@ -34,8 +36,8 @@ ROOT = Path(os.path.abspath(ROOT))  # relative
 WORK_DIR = os.path.dirname(ROOT)
 
 
-sys.path.append(os.path.join(ROOT, 'SimpleHTR'))
-sys.path.append(os.path.join(ROOT, 'SimpleHTR/src'))
+sys.path.append('./SimpleHTR')
+sys.path.append('./SimpleHTR/src')
 
 
 from SimpleHTR.src.model import Model, DecoderType
@@ -47,17 +49,16 @@ os.makedirs(output_dir, exist_ok=True)
 
 
 # load models
-def load_models():
-    refine_net = load_refinenet_model(cuda=True)
-    craft_net = load_craftnet_model(cuda=True)
-    args = parse_args()
-    decoder_mapping = {'bestpath': DecoderType.BestPath,
-                        'beamsearch': DecoderType.BeamSearch,
-                        'wordbeamsearch': DecoderType.WordBeamSearch}
-    decoder_type = decoder_mapping['wordbeamsearch']
-    model = Model(char_list_from_file(), decoder_type, must_restore=True, dump=args.dump)
+refine_net = load_refinenet_model(cuda=True)
+craft_net = load_craftnet_model(cuda=True)
+args = parse_args()
+decoder_mapping = {'bestpath': DecoderType.BestPath,
+                    'beamsearch': DecoderType.BeamSearch,
+                    'wordbeamsearch': DecoderType.WordBeamSearch}
+decoder_type = decoder_mapping['wordbeamsearch']
+ops.reset_default_graph()
+model = Model(char_list_from_file(), decoder_type, must_restore=True, dump=args.dump)
 
-    return craft_net, refine_net, model
 
 class UserRequest(BaseModel):
     image_url: str
@@ -74,8 +75,6 @@ def recognizer(image):
     results = {}
     list_text = []
     list_score = []
-
-    craft_net, refine_net, model = load_models()
 
     prediction_result = get_prediction(
         image=image,
@@ -145,4 +144,4 @@ if __name__ == "__main__":
     # image = base64_to_image(base64_code)
     # results = recognizer(image)
 
-    # uvicorn.run("api:app", host='0.0.0.0', port=8080, reload=True, workers=Pool()._processes)
+    uvicorn.run("api:app", host='0.0.0.0', port=8080, reload=True, workers=Pool()._processes)

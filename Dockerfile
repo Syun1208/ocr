@@ -4,9 +4,9 @@ ENV PYTHONUNBUFFERED True
 
 WORKDIR /api
 
-COPY SimpleHTR/ /api
-COPY api.py /api/
-COPY requirements.txt /api/
+
+COPY ./ /api/
+
 
 RUN apt-get update -y \
     && apt-get install build-essential -y \
