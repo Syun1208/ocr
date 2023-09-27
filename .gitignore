@@ -1,5 +1,4 @@
 input/
 output/
 __pycache__/
-PaddleOCR
 mmocr
