@@ -26,6 +26,8 @@ import copy
 import logging
 import numpy as np
 import time
+from bs4 import BeautifulSoup
+import json
 import tools.infer.predict_rec as predict_rec
 import tools.infer.predict_det as predict_det
 import tools.infer.utility as utility
@@ -87,7 +89,7 @@ class TableSystem(object):
         self.predictor, self.input_tensor, self.output_tensors, self.config = utility.create_predictor(
             args, 'table', logger)
 
-    def __call__(self, img, return_ocr_result_in_table=False):
+    def __call__(self, img, return_ocr_result_in_table=True):
         result = dict()
         time_dict = {'det': 0, 'rec': 0, 'table': 0, 'all': 0, 'match': 0}
         start = time.time()
@@ -102,8 +104,8 @@ class TableSystem(object):
 
         if return_ocr_result_in_table:
             result['boxes'] = [x.tolist() for x in dt_boxes]
-            result['rec_res'] = rec_res
-
+            result['rec_res'] = list(map(lambda x: x[0], rec_res))
+            result['scores'] = list(map(lambda x: x[1], rec_res))
         tic = time.time()
         pred_html = self.match(structure_res, dt_boxes, rec_res)
         toc = time.time()
@@ -230,21 +232,45 @@ def main(args):
     if args.benchmark:
         table_sys.table_structurer.autolog.report()
 
+def test_response():
+    image_path = '/home/hoangtv/Desktop/Long/customer/PaddleOCR/ppstructure/table/data/test.png'
+    image = cv2.imread(image_path)
+    response = table_recognizer_ppocr(image)
+    soup = BeautifulSoup(response['html'], 'html.parser')
+
+    # Extract data from HTML and format it into JSON
+    data = {"drug": [], "Full_Directions": []}
+
+    for row in soup.find_all('tbody')[0].find_all('tr'):
+        columns = row.find_all('td')
+        data["drug"].append(columns[0].get_text(strip=True))
+        data["Full_Directions"].append(columns[1].get_text(strip=True))
+
+    # Organize the data into a list of dictionaries
+    result = [{"drug": drug, "Full_Directions": direction} for drug, direction in zip(data["drug"], data["Full_Directions"])]
+
+    # Convert the result to JSON
+    json_result = json.dumps(result, indent=2)
+    print(type(response['html']))
+
+    format_response = {'html': response['html'], 'json': result}
+    print(format_response)
 
 if __name__ == "__main__":
-    args = parse_args()
-    if args.use_mp:
-        import subprocess
-        p_list = []
-        total_process_num = args.total_process_num
-        for process_id in range(total_process_num):
-            cmd = [sys.executable, "-u"] + sys.argv + [
-                "--process_id={}".format(process_id),
-                "--use_mp={}".format(False)
-            ]
-            p = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stdout)
-            p_list.append(p)
-        for p in p_list:
-            p.wait()
-    else:
-        main(args)
+    # args = parse_args()
+    # if args.use_mp:
+    #     import subprocess
+    #     p_list = []
+    #     total_process_num = args.total_process_num
+    #     for process_id in range(total_process_num):
+    #         cmd = [sys.executable, "-u"] + sys.argv + [
+    #             "--process_id={}".format(process_id),
+    #             "--use_mp={}".format(False)
+    #         ]
+    #         p = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stdout)
+    #         p_list.append(p)
+    #     for p in p_list:
+    #         p.wait()
+    # else:
+    #     main(args)
+    test_response()

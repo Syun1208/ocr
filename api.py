@@ -6,6 +6,8 @@ from pydantic import BaseModel
 from multiprocessing import Pool
 import uvicorn
 import time
+from bs4 import BeautifulSoup
+import json
 import requests
 from craft_text_detector import (
     read_image,
@@ -23,6 +25,7 @@ import numpy as np
 import sys
 from pathlib import Path
 import logging
+import torch
 import urllib.request
 import tensorflow as tf
 from tensorflow.python.framework import ops
@@ -50,10 +53,10 @@ app = FastAPI()
 output_dir = './ouput'
 os.makedirs(output_dir, exist_ok=True)
 
-
+device = True if torch.cuda.is_available() else False
 # load models
-refine_net = load_refinenet_model(cuda=True)
-craft_net = load_craftnet_model(cuda=True)
+refine_net = load_refinenet_model(cuda=device)
+craft_net = load_craftnet_model(cuda=device)
 args = parse_args()
 decoder_mapping = {'bestpath': DecoderType.BestPath,
                     'beamsearch': DecoderType.BeamSearch,
@@ -158,12 +161,40 @@ async def table_recognizer(request: UserRequest):
         image_data = np.asarray(bytearray(response.read()), dtype=np.uint8)
         image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
 
-    result = table_recognizer(image)
+    result = table_recognizer_ppocr(image)
 
     return HTMLResponse(content=result['html'], status_code=200)
 
     
-    
+@app.post('/table_recognizer_json')
+async def table_recognizer_json(request: UserRequest):
+    if request.image_base64 != "string" or request.image_base64 != "":
+        logging.info("USER CHOOSES IMAGE BASE64 MODE")
+        image = base64_to_image(request.image_base64)
+    elif request.image_url != "string" or request.image_url != "":
+        logging.info("USER CHOOSES IMAGE URL MODE")
+        response = urllib.request.urlopen(request.image_url)
+        image_data = np.asarray(bytearray(response.read()), dtype=np.uint8)
+        image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
+
+    result_tr_ppocr = table_recognizer_ppocr(image)
+    soup = BeautifulSoup(result_tr_ppocr['html'], 'html.parser')
+
+    # Extract data from HTML and format it into JSON
+    data = {"drug": [], "Full_Directions": []}
+
+    for row in soup.find_all('tbody')[0].find_all('tr'):
+        columns = row.find_all('td')
+        data["drug"].append(columns[0].get_text(strip=True))
+        data["Full_Directions"].append(columns[1].get_text(strip=True))
+
+    # Organize the data into a list of dictionaries
+    result = [{"drug": drug, "Full_Directions": direction} for drug, direction in zip(data["drug"], data["Full_Directions"])]
+
+    format_response = {'html': result_tr_ppocr['html'], 'json': result}
+
+    return JSONResponse(content=jsonable_encoder(format_response), status_code=200)
+
     
 
 @app.post('/table_recognizer_test')
