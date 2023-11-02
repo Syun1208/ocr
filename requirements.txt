@@ -29,3 +29,5 @@ sklearn==0.0
 
 # for vehicleplate in deploy/pipeline/ppvehicle
 pyclipper
+
+pydantic

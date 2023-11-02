@@ -165,6 +165,9 @@ def table_recognizer_ppocr(image):
 
     pred_res, _ = table_sys(image)
 
+    pred_res['html'] =  '<html>\n<body>\n' + "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />" + "<tr>\n" + '<td><table  border="1">' + pred_res['html'].replace(
+            '<html><body><table>', '').replace('</table></body></html>', '') + \
+                     '</table></td>\n' + "</tr>\n"
     return pred_res
 
 def main(args):
@@ -178,16 +181,16 @@ def main(args):
     f_html = open(
         os.path.join(args.output, 'show.html'), mode='w', encoding='utf-8')
     f_html.write('<html>\n<body>\n')
-    f_html.write('<table border="1">\n')
+    # f_html.write('<table border="1">\n')
     f_html.write(
         "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />"
     )
-    f_html.write("<tr>\n")
-    f_html.write('<td>img name\n')
-    f_html.write('<td>ori image</td>')
-    f_html.write('<td>table html</td>')
-    f_html.write('<td>cell box</td>')
-    f_html.write("</tr>\n")
+    # f_html.write("<tr>\n")
+    # f_html.write('<td>img name\n')
+    # f_html.write('<td>ori image</td>')
+    # f_html.write('<td>table html</td>')
+    # f_html.write('<td>cell box</td>')
+    # f_html.write("</tr>\n")
 
     for i, image_file in enumerate(image_file_list):
         logger.info("[{}/{}] {}".format(i, img_num, image_file))
@@ -218,15 +221,15 @@ def main(args):
         cv2.imwrite(img_save_path, img)
 
         f_html.write("<tr>\n")
-        f_html.write(f'<td> {os.path.basename(image_file)} <br/>\n')
-        f_html.write(f'<td><img src="{image_file}" width=640></td>\n')
+        # f_html.write(f'<td> {os.path.basename(image_file)} <br/>\n')
+        # f_html.write(f'<td><img src="{image_file}" width=640></td>\n')
         f_html.write('<td><table  border="1">' + pred_html.replace(
             '<html><body><table>', '').replace('</table></body></html>', '') +
                      '</table></td>\n')
-        f_html.write(
-            f'<td><img src="{os.path.basename(image_file)}" width=640></td>\n')
+    #     f_html.write(
+    #         f'<td><img src="{os.path.basename(image_file)}" width=640></td>\n')
         f_html.write("</tr>\n")
-    f_html.write("</table>\n")
+    # f_html.write("</table>\n")
     f_html.close()
 
     if args.benchmark:
@@ -257,20 +260,20 @@ def test_response():
     print(format_response)
 
 if __name__ == "__main__":
-    # args = parse_args()
-    # if args.use_mp:
-    #     import subprocess
-    #     p_list = []
-    #     total_process_num = args.total_process_num
-    #     for process_id in range(total_process_num):
-    #         cmd = [sys.executable, "-u"] + sys.argv + [
-    #             "--process_id={}".format(process_id),
-    #             "--use_mp={}".format(False)
-    #         ]
-    #         p = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stdout)
-    #         p_list.append(p)
-    #     for p in p_list:
-    #         p.wait()
-    # else:
-    #     main(args)
-    test_response()
+    args = parse_args()
+    if args.use_mp:
+        import subprocess
+        p_list = []
+        total_process_num = args.total_process_num
+        for process_id in range(total_process_num):
+            cmd = [sys.executable, "-u"] + sys.argv + [
+                "--process_id={}".format(process_id),
+                "--use_mp={}".format(False)
+            ]
+            p = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stdout)
+            p_list.append(p)
+        for p in p_list:
+            p.wait()
+    else:
+        main(args)
+    # test_response()
