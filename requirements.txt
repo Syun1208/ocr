@@ -1,33 +1,14 @@
 editdistance==0.5.2
 lmdb==1.0.0
-matplotlib==3.2.1
-numpy==1.19.5
-opencv-python==4.4.0.46
+matplotlib
+numpy
+opencv-python
 path==15.0.0
 tensorflow
-requests
 fastapi[all]
 uvicorn[standard]
-craft-text-detector
-numpy < 1.24
-tqdm
-typeguard
-visualdl>=2.2.0
-opencv-python <= 4.6.0
-PyYAML
-shapely
-scipy
-terminaltables
-Cython
-pycocotools
-setuptools
-
-# for MOT evaluation and inference
-lap
-motmetrics
-sklearn==0.0
-
-# for vehicleplate in deploy/pipeline/ppvehicle
-pyclipper
-
+BeautifulSoup4
 pydantic
+paddlepaddle
+"paddleocr>=2.0.1"
+paddleclas
